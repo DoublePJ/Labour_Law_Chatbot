@@ -1,6 +1,7 @@
 import os
 from typing import List, Dict
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from supabase import create_client, Client
@@ -39,7 +40,13 @@ embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-m3")
 
 # 5. เริ่มต้นแอป FastAPI
 app = FastAPI()
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # อนุญาตทุกเว็บ (เพื่อให้เพื่อนเทสง่ายๆ)
+    allow_credentials=True,
+    allow_methods=["*"],  # อนุญาตทุกท่า (GET, POST, etc.)
+    allow_headers=["*"],  # อนุญาตทุก Header
+)
 # --- Data Models (รูปแบบข้อมูลที่รับ-ส่ง) ---
 
 class ChatRequest(BaseModel):
@@ -138,7 +145,7 @@ async def chat_endpoint(request: ChatRequest):
         # ตรงตาม Proposal เรื่องการทำความสะอาดและจัดการภาษาธรรมชาติ [cite: 45, 201]
         processed_question = preprocess_thai_text(request.question)
         print(f"   🧹 Cleaned Input: {processed_question}") # เช็ค Log ดูว่ามันตัดคำให้ไหม
-        
+
         # Step 1: Context Awareness (Query Rewriting)
         # เช็คประวัติ แล้วเขียนคำถามใหม่ให้ชัดเจน
         search_query = rewrite_question(request.question, request.history)

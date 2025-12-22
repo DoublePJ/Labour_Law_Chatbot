@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CORS Test</title>
+</head>
+<body>
+    <h2>🕵️ ทดสอบการเชื่อมต่อ CORS</h2>
+    <button onclick="testAPI()">กดเพื่อทดสอบยิง API</button>
+    <p id="result" style="margin-top: 20px; font-weight: bold;"></p>
+
+    <script>
+        async function testAPI() {
+            const status = document.getElementById("result");
+            status.innerHTML = "⏳ กำลังเชื่อมต่อ...";
+            status.style.color = "blue";
+
+            try {
+                // จำลองการยิง API เหมือน Frontend
+                const response = await fetch("http://127.0.0.1:8000/chat", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        question: "ทดสอบ CORS",
+                        history: []
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    status.innerHTML = "✅ ผ่าน! (CORS ทำงานถูกต้อง)";
+                    status.style.color = "green";
+                    console.log("Response:", data);
+                } else {
+                    status.innerHTML = "❌ เชื่อมต่อได้ แต่มี Error อื่น: " + response.status;
+                    status.style.color = "orange";
+                }
+            } catch (error) {
+                // ถ้าติด CORS จะตกมาที่นี่
+                status.innerHTML = "❌ ไม่ผ่าน! (โดน Blocked หรือ Server ยังไม่เปิด)";
+                status.style.color = "red";
+                console.error("Error:", error);
+            }
+        }
+    </script>
+</body>
+</html>
