@@ -1,4 +1,4 @@
-# ⚖️ Thai Labour Law Chatbot (Backend API)
+# Thai Labour Law Chatbot (Backend API)
 
 โปรเจกต์นี้เป็นส่วนของ **Backend API** สำหรับแชทบอทกฎหมายแรงงานไทย  
 พัฒนาเป็นส่วนหนึ่งของ **Senior Project** โดยใช้แนวคิด  
@@ -7,7 +7,7 @@
 
 ---
 
-## 🏗️ Tech Stack
+## Tech Stack
 
 - **Framework:** FastAPI (Python)
 - **LLM:** Typhoon v2.5 (Thai LLM via OpenTyphoon API)
@@ -22,7 +22,7 @@
 ## ✨ ฟีเจอร์หลัก
 
 - 🔁 **Context Awareness**  
-  รองรับการสนทนาต่อเนื่อง เช่น “แล้วลาป่วยล่ะ?”
+  รองรับการการจดจำ Chat History”
 
 - ⚡ **Streaming Response**  
   ส่งคำตอบแบบ Real-time (Typewriter effect) ผ่าน `/chat_stream`
@@ -35,7 +35,7 @@
 
 ---
 
-## 🛠️ วิธีติดตั้งและเตรียมระบบ (Installation)
+## วิธีติดตั้งและเตรียมระบบ (Installation)
 
 ### 1️⃣ Clone Project
 
@@ -44,7 +44,7 @@ git clone https://github.com/DoublePJ/Labour_Law_Chatbot.git
 cd Labour_Law_Chatbot
 ```
 
-### 2️⃣ สร้าง Virtual Environment (แนะนำ)
+### 2️⃣ สร้าง Virtual Environment
 
 **Windows**
 ```bash
@@ -75,7 +75,7 @@ TYPHOON_BASE_URL=https://api.opentyphoon.ai/v1
 
 ---
 
-## 🚀 วิธีรัน Server (Run API)
+## วิธีรัน Server (Run API)
 
 ```bash
 python -m uvicorn api:app --reload
