@@ -102,8 +102,3 @@ streamlit run frontend.py
 ```
 
 ---
-
-## 👨‍🎓 ผู้พัฒนา
-
-Senior Project  
-Computer Engineering
