@@ -5,6 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from supabase import create_client, Client
+from fastapi.responses import StreamingResponse
+import json
+import asyncio
 
 # LangChain Imports
 from langchain_openai import ChatOpenAI
@@ -208,4 +211,88 @@ async def chat_endpoint(request: ChatRequest):
         print(f"Server Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/chat_stream")
+async def chat_stream_endpoint(request: ChatRequest):
+    try:
+        # Step 1: Preprocessing & Rewriting (เหมือนเดิม)
+        processed_question = preprocess_thai_text(request.question)
+        search_query = rewrite_question(processed_question, request.history)
+        
+        # Step 2: Retrieval (ค้นหาข้อมูล)
+        retrieved_docs = retrieve_data(search_query)
+
+        # เตรียม Context และ Sources
+        context_text = ""
+        sources_set = set()
+        
+        # ถ้าหาข้อมูลไม่เจอเลย
+        if not retrieved_docs:
+            async def empty_generator():
+                yield json.dumps({
+                    "type": "error", 
+                    "message": "ขออภัยครับ ไม่พบข้อมูลกฎหมายที่เกี่ยวข้องกับเรื่องนี้"
+                }) + "\n"
+            return StreamingResponse(empty_generator(), media_type="application/x-ndjson")
+
+        # จัดการข้อมูลที่เจอ (Context Building)
+        for doc in retrieved_docs:
+            sec_num = doc.get('section_number', '?')
+            text = doc.get('text_original', '')
+            context_text += f"- มาตรา {sec_num}: {text}\n\n"
+            sources_set.add(f"มาตรา {sec_num}")
+        
+        # เรียงลำดับ Sources ให้สวยงาม
+        try:
+            sources_list = sorted(list(sources_set), key=lambda x: int(x.split()[-1]) if x.split()[-1].isdigit() else 9999)
+        except:
+            sources_list = sorted(list(sources_set))
+
+        # --- Step 3: Generator Function (หัวใจของ Streaming) ---
+        async def event_generator():
+            # 3.1 ส่ง "รายการมาตรา" (Sources) ไปให้ Frontend ก่อนเลย (เร็วมาก)
+            yield json.dumps({
+                "type": "sources", 
+                "data": sources_list
+            }) + "\n"
+
+            # 3.2 เตรียม Prompt (เหมือนเดิม)
+            template = """
+            คุณคือทนายความผู้เชี่ยวชาญกฎหมายแรงงานไทย (Thai Labour Law Expert)
+            หน้าที่ของคุณคือให้คำปรึกษาแก่ลูกจ้างอย่างถูกต้อง สุภาพ และเข้าใจง่าย
+            
+            ข้อมูลกฎหมายที่อ้างอิง:
+            {context}
+            
+            คำถาม: {question}
+            
+            คำแนะนำในการตอบ:
+            1. ตอบคำถามโดยอ้างอิงจาก "ข้อมูลกฎหมาย" ที่ให้ไปเท่านั้น
+            2. ถ้าข้อมูลไม่เพียงพอ ให้บอกตรงๆ ว่าไม่ทราบ
+            3. อ้างอิงเลขมาตราเสมอเมื่อกล่าวถึงข้อกฎหมาย
+            4. สรุปใจความสำคัญให้เข้าใจง่ายสำหรับคนทั่วไป
+            
+            คำตอบ:
+            """
+            prompt = PromptTemplate(template=template, input_variables=["context", "question"])
+            chain = prompt | llm | StrOutputParser()
+
+            # 3.3 สั่ง AI ตอบแบบ Stream (ทีละคำ)
+            # ใช้ .astream แทน .invoke เพื่อรับข้อมูลทีละชิ้น
+            async for chunk in chain.astream({"context": context_text, "question": search_query}):
+                # ส่งเนื้อหาทีละนิดไปให้ Frontend
+                yield json.dumps({
+                    "type": "content", 
+                    "data": chunk
+                }) + "\n"
+
+        # ส่งคืนเป็น StreamingResponse
+        return StreamingResponse(event_generator(), media_type="application/x-ndjson")
+
+    except Exception as e:
+        print(f"Server Error: {e}")
+        # กรณี Error หนักๆ ส่ง JSON Error กลับไป
+        return StreamingResponse(
+            iter([json.dumps({"type": "error", "message": str(e)}) + "\n"]),
+            media_type="application/x-ndjson"
+        )
 # วิธีรัน: python -m uvicorn api:app --reload
