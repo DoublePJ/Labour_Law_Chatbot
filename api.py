@@ -45,7 +45,7 @@ embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-m3")
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # อนุญาตทุกเว็บ (เพื่อให้เพื่อนเทสง่ายๆ)
+    allow_origins=["*"],  # อนุญาตทุกเว็บ 
     allow_credentials=True,
     allow_methods=["*"],  # อนุญาตทุกท่า (GET, POST, etc.)
     allow_headers=["*"],  # อนุญาตทุก Header
@@ -79,7 +79,7 @@ def preprocess_thai_text(text: str) -> str:
 
 def retrieve_data(question: str):
     """ฟังก์ชันค้นหากฎหมายจาก Supabase"""
-    print(f"   🔍 กำลังค้นหาข้อมูลสำหรับ: {question}")
+    print(f"    กำลังค้นหาข้อมูลสำหรับ: {question}")
     
     # 1. แปลงคำถามเป็น Vector
     query_vector = embeddings.embed_query(question)
@@ -103,7 +103,7 @@ def rewrite_question(question: str, history: List[Dict[str, str]]) -> str:
     if not history:
         return question
     
-    print("   🔄 กำลังเรียบเรียงคำถามใหม่ (Query Rewriting)...")
+    print("    กำลังเรียบเรียงคำถามใหม่ (Query Rewriting)...")
     
     # แปลง History List ให้เป็นข้อความ String
     history_text = ""
@@ -132,11 +132,11 @@ def rewrite_question(question: str, history: List[Dict[str, str]]) -> str:
         # สั่ง AI ทำงาน
         new_question = chain.invoke({"chat_history": history_text, "question": question})
         
-        print(f"   ✨ คำถามใหม่ที่ได้: {new_question}")
+        print(f"    คำถามใหม่ที่ได้: {new_question}")
         return new_question.strip()
         
     except Exception as e:
-        print(f"   ❌ Error rewriting: {e}")
+        print(f"    Error rewriting: {e}")
         return question # ถ้า error ให้ใช้คำถามเดิมไปก่อน
 
 # --- Main API Endpoint ---
@@ -147,7 +147,7 @@ async def chat_endpoint(request: ChatRequest):
         # --- [NEW] Step 0: Text Preprocessing (PyThaiNLP) ---
         # ตรงตาม Proposal เรื่องการทำความสะอาดและจัดการภาษาธรรมชาติ [cite: 45, 201]
         processed_question = preprocess_thai_text(request.question)
-        print(f"   🧹 Cleaned Input: {processed_question}") # เช็ค Log ดูว่ามันตัดคำให้ไหม
+        print(f"    Cleaned Input: {processed_question}") # เช็ค Log ดูว่ามันตัดคำให้ไหม
 
         # Step 1: Context Awareness (Query Rewriting)
         # เช็คประวัติ แล้วเขียนคำถามใหม่ให้ชัดเจน
